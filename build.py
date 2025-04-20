@@ -6,7 +6,7 @@ from pip._internal.cli.main import main as pip_run
 from PyInstaller.__main__ import run as pyi_run
 from shutil import make_archive
 NAME="PnB-LauncherInstaller"
-VERSION="1.0"
+VERSION="1.1"
 def log(text:str,*values,**kw):
   if len(values)==1:
     text=text%values[0]

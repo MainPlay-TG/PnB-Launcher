@@ -25,13 +25,14 @@ except Exception:
 ARCH_TYPE="x64"
 JDK_URL="https://pnb-launcher.mainplay-tg.ru/jdk.json"
 LAUNCHER_DIR=os.path.expanduser("~/%s/MainPlay_TG/Paws'n'Blocks"%("AppData/Local" if sys.platform=="win32" else ".local/share"))
+JAVA_BIN=LAUNCHER_DIR+"/launcher-jdk/java"
 LAUNCHER_JAR=LAUNCHER_DIR+"/Launcher.jar"
 LAUNCHER_URL="https://pnb-launcher.mainplay-tg.ru/Launcher.jar"
 OS_TYPE={"win32":"win"}.get(sys.platform,sys.platform)
-JAVA_BIN=LAUNCHER_DIR+"/launcher-jdk/java"
 OS_ARCH_STR="%s/%s"%(OS_TYPE,ARCH_TYPE)
 if OS_TYPE=="win":
-  JAVA_BIN+=".exe"
+  JAVA_BIN=JAVA_BIN.replace("/","\\")+".exe"
+  LAUNCHER_JAR=LAUNCHER_JAR.replace("/","\\")
 def log(text:str,*values,**kw):
   kw.setdefault("file",sys.stderr)
   if len(values)==0:
@@ -76,6 +77,17 @@ class RemoteFileInfo:
     log("Распаковка файла %s",self.path.full_name)
     shutil.unpack_archive(self.path,self.path.parent_dir)
     self.path.delete()
+def check_launcher_updates(http:requests.Session):
+  if not ms.path.exists(LAUNCHER_JAR):
+    return True
+  ms2hash=http.get(LAUNCHER_URL+".MS2_hash").json()
+  if ms2hash["file"]["size"]!=os.path.getsize(LAUNCHER_JAR):
+    return True
+  hash:hashlib._Hash=getattr(hashlib,ms2hash["hash"]["type"])()
+  with open(LAUNCHER_JAR,"rb") as f:
+    for chunk in f:
+      hash.update(chunk)
+  return ms2hash["hash"]["hex"]!=hash.hexdigest()
 @ms.utils.main_func(__name__)
 def main(**kw):
   log("Папка лаунчера: %s",LAUNCHER_DIR)
@@ -83,8 +95,9 @@ def main(**kw):
     kw["method"]="GET"
     kw["session"]=http
     try:
-      if not ms.path.exists(LAUNCHER_JAR):
+      if check_launcher_updates(http):
         log("Скачивание лаунчера")
+        ms.path.delete(LAUNCHER_JAR)
         ms.utils.download_file(LAUNCHER_URL,LAUNCHER_JAR,**kw)
       if not ms.path.exists(JAVA_BIN):
         log("Получение списка JDK")
@@ -106,11 +119,15 @@ def main(**kw):
       log("Не удалось соединиться с сервером. Проверьте подключение к интернету и попробуйте снова. Если проблема повторяется, спросите в чате https://t.me/PawsNBlocks/1")
       print_exception(exc)
       return 1
-    ssn={"linux":"start.sh","win":"start.bat"}.get(OS_TYPE)
-    if ssn:
-      ssp=LAUNCHER_DIR+"/"+ssn
-      if not ms.path.exists(ssp):
-        log("Запись скрипта %s",ssn)
-        sst=("#!/bin/env bash\n" if OS_TYPE=="linux" else "")+shlex.join([JAVA_BIN,"-jar",LAUNCHER_JAR])
-        ms.file.write(ssp,sst)
-    subprocess.call([JAVA_BIN,"-jar",LAUNCHER_JAR])
+  ssn={"linux":"start.sh","win":"start.bat"}.get(OS_TYPE)
+  if ssn:
+    ssp=LAUNCHER_DIR+"/"+ssn
+    if OS_TYPE=="win":
+      if ms.path.exists(ssp):
+        if "/launcher-jdk/" in ms.file.read(ssp):
+          ms.path.delete(ssp)
+    if not ms.path.exists(ssp):
+      log("Запись скрипта %s",ssn)
+      sst=("#!/bin/env bash\n" if OS_TYPE=="linux" else "")+shlex.join([JAVA_BIN,"-jar",LAUNCHER_JAR])
+      ms.file.write(ssp,sst)
+  subprocess.call([JAVA_BIN,"-jar",LAUNCHER_JAR])
