@@ -45,23 +45,50 @@ def log(text:str,*values,**kw):
   if len(values)==1:
     values=values[0]
   print(text%values,**kw)
-def install_java(*,_try_again=True):
-  ver_data={
-    "arch":ARCH_TYPE,
-    "developer":"bellsoft",
-    "platform":OS_TYPE,
-    "type":"jdk",
-    "version":17,
-  }
-  if ms.path.exists(LAUNCHER_DIR+"/launcher-jdk"):
-    log("Удаление старой JDK")
-    ms.path.delete(LAUNCHER_DIR+"/launcher-jdk")
-  if ms.path.exists(LAUNCHER_DIR+"/launcher-jre"):
-    log("Удаление старой JRE")
-    ms.path.delete(LAUNCHER_DIR+"/launcher-jre")
-  if os.path.isfile(os.path.realpath(JAVA_BIN)):
+class JavaDownloader(ms.ObjectBase):
+  def __init__(self,dev:str,version:int,type:str):
+    self.arch=ARCH_TYPE
+    self.dev=dev
+    self.installed=False
+    self.platform=OS_TYPE
+    self.tmp_dir=tmp_dir=LAUNCHER_DIR+"/downloading-java/"
+    self.type=type
+    self.version=version
+  def __exit__(self,*a):
+    ms.path.delete(LAUNCHER_DIR+"/downloading-java")
+  def check(self):
+    if not ms.path.exists(JAVA_BIN):
+      return False
+    if not ms.path.exists(JAVA_DIR+"/version.json"):
+      return False
+    data=ms.json.read(JAVA_DIR+"/version.json")
+    for i in ("arch","dev","platform","type","version"):
+      if data[i]!=getattr(self,i):
+        return False
+    self.installed=True
     return True
-  ms.dir.create(JAVA_DIR)
+  def download(self):
+    mkdir_clear(self.tmp_dir)
+    ms.utils.download_file("https://mainplay-tg.ru/files/runtime.db",tmp_dir+"/runtime.db")
+  def install(self):
+    mkdir_clear(JAVA_DIR)
+    ms.json.write(JAVA_DIR+"/version.json",{i:getattr(self,i) for i in ("arch","dev","platform","type","version")})
+    self.installed=True
+  def delete_old(self):
+    if ms.path.exists(LAUNCHER_DIR+"/launcher-jdk"):
+      log("Удаление старой JDK")
+      ms.path.delete(LAUNCHER_DIR+"/launcher-jdk")
+    if ms.path.exists(LAUNCHER_DIR+"/launcher-jre"):
+      log("Удаление старой JRE")
+      ms.path.delete(LAUNCHER_DIR+"/launcher-jre")
+  def run_all(self):
+    with self:
+      self.delete_old()
+      if not self.check():
+        self.download()
+        self.install()
+def install_java(*,_try_again=True):
+
   for i in ms.dir.list_iter(JAVA_DIR):
     i.delete()
   tmp_dir=LAUNCHER_DIR+"/downloading-java/"
@@ -69,7 +96,7 @@ def install_java(*,_try_again=True):
     ms.dir.create(tmp_dir)
     for i in ms.dir.list_iter(tmp_dir):
       i.delete()
-    ms.utils.download_file("https://mainplay-tg.ru/files/runtime.db",tmp_dir+"/runtime.db")
+    
     with sqlite3.connect(tmp_dir+"/runtime.db") as conn:
       cur=conn.cursor()
       cur.execute("SELECT tags,url FROM java WHERE arch=? AND developer=? AND filetype='archive' AND platform=? AND type=? AND version=?;",(ARCH_TYPE,ver_data["developer"],OS_TYPE,ver_data["type"],ver_data["version"]))
@@ -116,6 +143,10 @@ def install_java(*,_try_again=True):
             return True
   log("Не удалось найти подходящую Java для %s %s",OS_TYPE,ARCH_TYPE)
   return False
+def mkdir_clear(path:str):
+  ms.dir.create(path)
+  for i in ms.dir.list_iter(path):
+    i.delete()
 def check_launcher_updates():
   if not ms.path.exists(LAUNCHER_JAR):
     return True
