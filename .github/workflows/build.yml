@@ -44,8 +44,8 @@ jobs:
         with:
           upload_url: "${{ steps.create_release.outputs.upload_url }}"
           asset_path: "${{ steps.read_yaml.outputs['release_src'] }}"
-          asset_name: "${{ steps.read_yaml.outputs['full_name'] }}-src.zip"
-          asset_content_type: application/zip
+          asset_name: "${{ steps.read_yaml.outputs['full_name'] }}-src.py"
+          asset_content_type: text/x-python
 
       - name: Upload executable to release
         uses: actions/upload-release-asset@v1
@@ -54,5 +54,5 @@ jobs:
         with:
           upload_url: "${{ steps.create_release.outputs.upload_url }}"
           asset_path: "${{ steps.read_yaml.outputs['release_exe'] }}"
-          asset_name: "${{ steps.read_yaml.outputs['full_name'] }}-${{ steps.read_yaml.outputs['platform'] }}.zip"
-          asset_content_type: application/zip
+          asset_name: "${{ steps.read_yaml.outputs['full_name'] }}-${{ steps.read_yaml.outputs['platform'] }}.exe"
+          asset_content_type: application/x-msdownload
