@@ -110,7 +110,7 @@ class LauncherInstaller(ms.ObjectBase):
     self._platform=None
     self._runtime_db=None
     self._system=None
-    self.self_update()
+    # self.self_update()
     self.move_old_launcher()
     self.threads:list[Thread]=[]
   @property
@@ -249,7 +249,7 @@ class LauncherInstaller(ms.ObjectBase):
   def _install_launcher(self):
     remote=Format1.from_dict(ms.utils.request("GET",self.ROOT_URL+"Launcher.jar.MS2_hash").json())
     if ms.path.exists(self.dir+"/Launcher.jar"):
-      local=Format1.generate(self.dir+"/Launcher.jar",False,hash_type=remote.hash_type)
+      local=Format1.generate(self.dir+"/Launcher.jar",True,hash_type=remote.hash_type)
       if local.file_size==remote.file_size:
         if local.hash_hex==remote.hash_hex:
           print("Лаунчер установлен")
@@ -259,7 +259,7 @@ class LauncherInstaller(ms.ObjectBase):
       print("Скачивание лаунчера")
     self.downloader.download2file(self.ROOT_URL+"Launcher.jar",self.dir+"/Launcher.jar")
     print("Проверка целостности лаунчера")
-    local=Format1.generate(self.dir+"/Launcher.jar",False,hash_type=remote.hash_type)
+    local=Format1.generate(self.dir+"/Launcher.jar",hash_type=remote.hash_type)
     if local.file_size!=remote.file_size:
       raise RuntimeError("Файл повреждён!")
     if local.hash_hex!=remote.hash_hex:
