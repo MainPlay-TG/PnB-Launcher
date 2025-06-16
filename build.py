@@ -19,16 +19,15 @@ def clear_dir(dir:str):
   ms.dir.create(dir)
   for i in ms.dir.list(dir):
     i.delete()
-def pack_release(dir:str,name:str):
-  os.symlink(os.path.abspath(dir),"release/"+name)
-  return make_archive("release/"+name,"zip","release",name)
 def edit_source():
   import_lines=[]
   is_import=False
   new_lines=[]
   old_lines=[i.rstrip() for i in ms.file.read("src/__main__.py").split("\n")]
   for line in old_lines:
-    if line.startswith('VERSION="AUTO"'):
+    if line.startswith("NAME="):
+      line="NAME=%r"%NAME
+    if line.startswith("VERSION="):
       line="VERSION=%r"%VERSION
     if line.startswith("# IMPORTS.START"):
       is_import=True
@@ -47,10 +46,10 @@ def edit_source():
         new_lines.append("  %s"%i)
       import_lines.clear()
       is_import=False
-    if is_import:
-      import_lines.append(line)
-    else:
-      if not line.lstrip().startswith("#"):
+    if not line.lstrip().startswith("#"):
+      if is_import:
+        import_lines.append(line)
+      else:
         new_lines.append(line)
   if is_import:
     raise Exception("Unfinished IMPORTS")
@@ -67,12 +66,13 @@ def main():
   log("Editing source")
   edit_source()
   log("Creating source release")
-  rel_src=pack_release("src","%s_%s-src"%(NAME,VERSION))
+  rel_src="release/%s_%s-src.py"%(NAME,VERSION)
+  ms.file.copy("src/__main__.py",rel_src)
   log("Release with source saved to %s",rel_src)
   log("Compiling executable for %s %s",sys.platform,platform.machine())
   pyi_run(["--console","--distpath","dist","--name",NAME,"--onefile","src/__main__.py"])
   log("Creating executable release")
-  rel_exe="dist/%s_%s-%s"%(NAME,VERSION,sys.platform)
+  rel_exe="release/%s_%s-%s.exe"%(NAME,VERSION,sys.platform)
   ms.file.move(ms.dir.list("dist",exts=["exe"])[0],rel_exe)
   log("Release for %s saved to %s",sys.platform,rel_exe)
   yml={}

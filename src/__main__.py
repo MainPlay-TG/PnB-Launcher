@@ -14,6 +14,7 @@ from MainShortcuts2.advanced import _Platform
 from MainShortcuts2.ms2hash import Format1
 from MainShortcuts2.sql.sqlite import Database
 # IMPORTS.END
+NAME="AUTO"
 VERSION="AUTO"
 argp=ArgumentParser()
 argp.add_argument("--debug",action="store_true")
@@ -195,9 +196,8 @@ class LauncherInstaller(ms.ObjectBase):
       ms.path.delete(old_dir)
   def self_update(self):
     GH_REPO="MainPlay-TG","PnB-Launcher"
-    GH_ROOT="https://github.com/%s/%s/raw/refs/heads/master/"%GH_REPO
     new_version=None
-    for line in ms.utils.request("GET",GH_ROOT+"build.py").text.split("\n"):
+    for line in ms.utils.request("GET","https://github.com/%s/%s/raw/refs/heads/master/build.py"%GH_REPO).text.split("\n"):
       if line.startswith("VERSION="):
         new_version=eval(line[len("VERSION="):])
         break
@@ -206,13 +206,12 @@ class LauncherInstaller(ms.ObjectBase):
     if VERSION==new_version:
       return
     print("Обновление престартера (%s -> %s)"%(VERSION,new_version))
-    if ms.MAIN_FILE.endswith(".py"):
-      ms.utils.download_file(GH_ROOT+"src/__main__.py",ms.MAIN_FILE)
-    else:
-      release_info=ms.utils.request("GET","https://api.github.com/repos/%s/%s/releases/latest"%GH_REPO).json()
-      assets=release_info["assets"]
-      for asset in assets:
-        if asset["name"].endswith(".exe"):
+    release_info=ms.utils.request("GET","https://api.github.com/repos/%s/%s/releases/latest"%GH_REPO).json()
+    assets=release_info["assets"]
+    ext=ms.path.Path(ms.MAIN_FILE).ext
+    for asset in assets:
+      if asset["name"].startswith(NAME):
+        if asset["name"].endswith(ext):
           ms.utils.download_file(asset["browser_download_url"],ms.MAIN_FILE)
           break
     print("Престартер успешно обновлён, перезапуск...")
