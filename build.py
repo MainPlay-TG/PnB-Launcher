@@ -48,7 +48,7 @@ def edit_source():
       import_lines.clear()
       is_import=False
     if is_import:
-      import_lines.append()
+      import_lines.append(line)
     else:
       if not line.lstrip().startswith("#"):
         new_lines.append(line)
