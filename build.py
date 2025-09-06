@@ -6,7 +6,7 @@ from MainShortcuts2 import ms
 from pip._internal.cli.main import main as pip_run
 from PyInstaller.__main__ import run as pyi_run
 NAME="PnB-LauncherInstaller"
-VERSION="3.0"
+VERSION="3.1"
 def log(text:str,*values,**kw):
   if len(values)==1:
     text=text%values[0]
@@ -98,15 +98,14 @@ def main():
     kw["json"]={"body":"Автоматический релиз","draft":False,"name":yml["full_name"],"prerelease":False,"tag_name":VERSION}
     kw["session"].headers["Accept"]="application/vnd.github.v3+json"
     kw["session"].headers["Authorization"]="token "+token
-    log("Создание релиза в репозитории %s/%s",owner,repo)
+    log("Creating release in repo %s/%s",owner,repo)
     with ms.utils.request("POST","https://api.github.com/repos/%s/%s/releases"%(owner,repo),**kw) as resp:
       release:dict=resp.json()
-    kw["files"]={}
     kw["params"]={}
     kw["session"].headers["Content-Type"]="application/octet-stream"
     for file in yml["files"]:
-      log("Загрузка файла %s",file["name"])
+      log("Uploading file %s",file["name"])
       with open(file["path"],"rb") as f:
-        kw["files"]["file"]=f
+        kw["data"]=f
         kw["params"]["name"]=file["name"]
         ms.utils.request("POST",release["upload_url"].replace("{?name,label}",""),**kw)
