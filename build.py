@@ -1,3 +1,4 @@
+import os
 import platform
 import sys
 import yaml
@@ -82,6 +83,28 @@ def main():
     log("Adding executable %s to release",i.full_name)
     dist_file=ms.dir.list(dist_dir,exts=["exe"])[0].path
     yml["files"].append({"name":"%s-%s-%s-%s.exe"%(NAME,VERSION,i.full_name,arch),"path":dist_file})
+  yml["files"].sort(key=lambda i:i["name"])
   ms.file.write("release.yml",yaml.dump(yml))
   log("Complete!")
   ms.json.print(yml)
+  if "--release" in sys.argv:
+    import requests
+    owner=os.environ["GITHUB_OWNER"]
+    repo=os.environ["GITHUB_REPO"]
+    token=os.environ["GITHUB_TOKEN"]
+    kw={"session":requests.Session()}
+    kw["json"]={"body":"Автоматический релиз","draft":False,"name":yml["full_name"],"prerelease":False,"tag_name":VERSION}
+    kw["session"].headers["Accept"]="application/vnd.github.v3+json"
+    kw["session"].headers["Authorization"]="token "+token
+    log("Создание релиза в репозитории %s/%s",owner,repo)
+    with ms.utils.request("POST","https://api.github.com/repos/%s/%s/releases"%(owner,repo),**kw) as resp:
+      release:dict=resp.json()
+    kw["files"]={}
+    kw["params"]={}
+    kw["session"].headers["Content-Type"]="application/octet-stream"
+    for file in yml["files"]:
+      log("Загрузка файла %s",file["name"])
+      with open(file["path"],"rb") as f:
+        kw["files"]["file"]=f
+        kw["params"]["name"]=file["name"]
+        ms.utils.request("POST",release["upload_url"].replace("{?name,label}",""),**kw)

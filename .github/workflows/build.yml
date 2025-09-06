@@ -5,9 +5,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        file: ${{ steps.read_yaml.outputs['files'] }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -21,31 +18,8 @@ jobs:
         run: pip install -U -r build-requirements.txt
 
       - name: Build
-        run: python3 build.py
-
-      - name: Read release.yml
-        id: read_yaml
-        uses: pietrobolcato/action-read-yaml@1.1.0
-        with:
-          config: release.yml
-
-      - name: Create release
-        id: create_release
-        uses: actions/create-release@v1
         env:
+          GITHUB_OWNER: "${{ github.repository_owner }}"
+          GITHUB_REPO: "${{ github.event.repository.name }}"
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-        with:
-          draft: false
-          prerelease: false
-          release_name: "${{ steps.read_yaml.outputs['full_name'] }}"
-          tag_name: "${{ steps.read_yaml.outputs['full_name'] }}"
-
-      - name: Upload files to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          asset_content_type: application/octet-stream
-          asset_name: ${{ matrix.file.name }}
-          asset_path: ${{ matrix.file.path }}
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+        run: python3 build.py --release
