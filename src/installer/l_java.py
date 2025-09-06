@@ -106,7 +106,7 @@ class JavaList(ms.ObjectBase):
   @property
   def dir(self)->str:
     if self._dir is None:
-      self._dir="%s/java/%s-%s"%(self.inst.dir,self.system,self.arch)
+      self._dir="%s/java/%s-%s"%(self.inst.dir,self.inst.system,self.inst.arch)
       ms.dir.create(self._dir)
     return self._dir
   def install(self):

@@ -104,7 +104,7 @@ class Prestarter(ms.ObjectBase):
     if file.check(penable=penable):
       return True
     pmode=0
-    chunk_size=int(1024*1024) # 1 MB
+    chunk_size=int(1024*16) # 16 KB
     if penable:
       pmode=FakeProgressBar.MODE_DOWNLOAD
       print("Скачивание %s"%name)

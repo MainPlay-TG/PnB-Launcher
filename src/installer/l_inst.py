@@ -79,7 +79,7 @@ class Installer(ms.ObjectBase):
   @property
   def dir(self)->str:
     if self._dir is None:
-      self._dir=os.path.expanduser("~/%s/MainPlay_TG/PawsNBlocks"%("AppData/Local" if self.platform.is_windows else ".local/share"))
+      self._dir=os.path.expanduser("~/%s/MainPlay_TG/PawsNBlocks"%("AppData/Local" if self.plat.is_windows else ".local/share"))
       ms.dir.create(self._dir+"/updates")
     return self._dir
   @property
@@ -162,7 +162,7 @@ class Installer(ms.ObjectBase):
       kw["stdout"]=f
       return subprocess.call(**kw)
   def move_old_launcher(self):
-    old_dir=os.path.expanduser("~/%s/MainPlay_TG/Paws'n'Blocks"%("AppData/Local" if self.platform.is_windows else ".local/share"))
+    old_dir=os.path.expanduser("~/%s/MainPlay_TG/Paws'n'Blocks"%("AppData/Local" if self.plat.is_windows else ".local/share"))
     if not ms.path.exists(old_dir):
       return
     print("Перемещаю файлы старого лаунчера...")
@@ -194,5 +194,5 @@ class Installer(ms.ObjectBase):
     self.move_old_launcher()
     self.install_launcher()
     self.java.install()
-    with ms.utils.OnlyOneInstance(self.dir+"/launcher.lock"):
+    with ms.utils.OnlyOneInstance(lock_path=self.dir+"/launcher.lock"):
       return self.start_launcher(**kw)
