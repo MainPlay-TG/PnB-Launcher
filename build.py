@@ -70,8 +70,10 @@ def main():
   ms.path.cwd(ms.MAIN_DIR)
   log("Installing requirements")
   pip_run(["install","-U","-r","src/requirements.txt"])
-  for i in ms.dir.list("src"):
+  for i in ms.dir.list("src",type="dir"):
     src_file=i.path+"/__main__.py"
+    if not ms.path.exists(src_file):
+      continue
     log("Editing source for %s",i.full_name)
     edit_source(src_file)
     log("Adding source %s to release",i.full_name)
