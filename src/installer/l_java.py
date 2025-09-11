@@ -95,6 +95,7 @@ class JavaList(ms.ObjectBase):
       for i in data["versions"]:
         JavaVersion(self,i)
     else:
+      log("Не удалось получить список Java, использую %s",self.DEFAULT_VERSION_ID)
       self.mv_id=self.DEFAULT_VERSION_ID
   @property
   def bin(self)->str:

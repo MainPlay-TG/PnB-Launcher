@@ -1,5 +1,6 @@
 import hashlib
 import subprocess
+from l_check_files import CheckFiles
 from l_java import *
 from l_util import *
 from MainShortcuts2.sql.sqlite import Database
@@ -105,7 +106,7 @@ class Installer(ms.ObjectBase):
       self._system={"win32":"windows"}.get(self._system,self._system)
     return self._system
   def download_file(self,url:str,path:str,size:int=None,penable=False,retry=True):
-    chunk_size=int(1024*1024) # 1 MB
+    chunk_size=int(1024*16) # 16 KB
     pmode=0
     if size is None:
       penable=False
@@ -194,5 +195,6 @@ class Installer(ms.ObjectBase):
     self.move_old_launcher()
     self.install_launcher()
     self.java.install()
+    CheckFiles(self).start()
     with ms.utils.OnlyOneInstance(lock_path=self.dir+"/launcher.lock"):
       return self.start_launcher(**kw)
