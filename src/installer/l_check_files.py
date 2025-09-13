@@ -1,4 +1,5 @@
 import requests
+from l_break_rp import check_resourcepack,break_resourcepack
 from l_util import *
 from threading import Thread
 from time import time,sleep
@@ -33,7 +34,10 @@ class CheckFiles(Thread):
         for hash in data["rejected"]:
           file=self.files[hash]
           for path in file["files"]:
-            ms.file.delete(path)
+            try:
+              break_resourcepack(path)
+            except Exception:
+              ms.file.delete(path)
         return True
     except requests.HTTPError as exc:
       if exc.response.status_code==403:
@@ -49,13 +53,14 @@ class CheckFiles(Thread):
           if ms.path.is_dir(dir):
             for file in ms.dir.list_iter(dir,type="file"):
               if not file.ext in BLACKLISTED_EXTS:
-                data={"loc":loc}
-                data["name"]=file.full_name
-                data["sha256"]=file.hash_hex("sha256")
-                data["size"]=file.size
-                self.files[data["sha256"]]=data
-                self.files[data["sha256"]].setdefault("files",set())
-                self.files[data["sha256"]]["files"].add(file.path)
+                if not check_resourcepack(loc,file.path):
+                  data={"loc":loc}
+                  data["name"]=file.full_name
+                  data["sha256"]=file.hash_hex("sha256")
+                  data["size"]=file.size
+                  self.files[data["sha256"]]=data
+                  self.files[data["sha256"]].setdefault("files",set())
+                  self.files[data["sha256"]]["files"].add(file.path)
     result=[]
     for orig in self.files.values():
       copy=orig.copy()
@@ -82,3 +87,4 @@ class CheckFiles(Thread):
           if os.environ.get("DEBUG"):
             traceback.print_exception(exc)
           return False
+      sleep(1)
