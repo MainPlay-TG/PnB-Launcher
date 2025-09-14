@@ -64,13 +64,13 @@ class Installer(ms.ObjectBase):
     self._plat=None
     self._runtime_db=None
     self._system=None
-    self.java=JavaList(self)
     try:
       for i in ms.utils.request("GET",self.URL+"files.json").json():
         FileInfo(self,i)
     except ConnectionError as exc:
       print("Не удалось получить список файлов. Проверьте соединение с интернетом")
       print(exc)
+    self.java=JavaList(self)
   @property
   def arch(self) -> str:
     if self._arch is None:
@@ -153,15 +153,17 @@ class Installer(ms.ObjectBase):
       "pro.gravit.launcher.LauncherEngineWrapper",
     ]
     kw["cwd"]=self.dir
+    if self.plat.is_windows:
+      kw.setdefault("creationflags",subprocess.DETACHED_PROCESS|subprocess.CREATE_NO_WINDOW)
     if dev:
       kw.pop("stderr",None)
       kw.pop("stdout",None)
       print("Запуск в режиме для разработчиков. Запись в файл журнала недоступна")
-      return subprocess.call(**kw)
+      return subprocess.Popen(**kw)
     with open(self.dir+"/latest.log","wb") as f:
       kw["stderr"]=f
       kw["stdout"]=f
-      return subprocess.call(**kw)
+      return subprocess.Popen(**kw)
   def move_old_launcher(self):
     old_dir=os.path.expanduser("~/%s/MainPlay_TG/Paws'n'Blocks"%("AppData/Local" if self.plat.is_windows else ".local/share"))
     if not ms.path.exists(old_dir):
