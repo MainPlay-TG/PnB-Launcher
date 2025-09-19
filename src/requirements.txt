@@ -1,3 +1,4 @@
 MainShortcuts2>=2.6.0
+nbtlib>=2.0.4
 progressbar2>=4.5.0
 requests>=2.32.3

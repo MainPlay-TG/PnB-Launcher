@@ -1,6 +1,7 @@
 NAME="NOT_RELEASED"
 VERSION="NOT_RELEASED"
 # IMPORTS.START
+import nbtlib
 import progressbar
 import requests
 from MainShortcuts2 import ms

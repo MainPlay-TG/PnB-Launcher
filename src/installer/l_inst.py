@@ -2,6 +2,7 @@ import hashlib
 import subprocess
 from l_check_files import CheckFiles
 from l_java import *
+from l_servers_dat import ServerListEditor
 from l_util import *
 from MainShortcuts2.sql.sqlite import Database
 class FileInfo:
@@ -198,5 +199,6 @@ class Installer(ms.ObjectBase):
     self.install_launcher()
     self.java.install()
     CheckFiles(self).start()
+    ServerListEditor(self)
     with ms.utils.OnlyOneInstance(lock_path=self.dir+"/launcher.lock"):
       return self.start_launcher(**kw)
