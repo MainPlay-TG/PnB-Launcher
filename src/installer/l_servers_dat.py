@@ -10,6 +10,8 @@ def print_changelog(act:str,modpack:str,server:nbtlib.Compound):
     return log("%s: Добавлен сервер %s (%s)",modpack,server["name"],server["ip"])
   if act=="delete":
     return log("%s: Удален сервер %s (%s)",modpack,server["name"],server["ip"])
+  if act=="rename":
+    return log("%s: Переименован сервер %s (%s)",modpack,server["name"],server["ip"])
   if act=="replace":
     return log("%s: Заменён IP %s на %s",modpack,server["name"],server["ip"])
   log("%s: %s %s (%s)",modpack,act,server["name"],server["ip"])
@@ -43,6 +45,7 @@ class ServerListEditor:
     patch:dict=self.patches[modpack]
     patch.setdefault("add",{})
     patch.setdefault("delete",[])
+    patch.setdefault("rename",{})
     patch.setdefault("replace",{})
     server:nbtlib.Compound
     for server in data["servers"]:
@@ -51,9 +54,16 @@ class ServerListEditor:
         edited=True
         print_changelog("delete",modpack,server)
         continue
+      if ip in patch["rename"]:
+        old_name=str(server["name"])
+        if patch["rename"][ip]!=old_name:
+          edited=True
+          print_changelog("rename",modpack,server)
+          server["name"]=nbtlib.String(patch["rename"][ip])
       if ip in patch["replace"]:
         edited=True
-        server["ip"]=nbtlib.String(patch["replace"][ip])
+        ip=patch["replace"][ip]
+        server["ip"]=nbtlib.String(ip)
         print_changelog("replace",modpack,server)
       exists.add(ip)
       new_list.append(server)
@@ -66,6 +76,7 @@ class ServerListEditor:
         server["name"]=nbtlib.String(name)
         new_list.append(server)
         print_changelog("add",modpack,server)
+    data["servers"]=new_list
     if edited:
       with BytesIO() as b:
         data.write(b,byteorder=data.byteorder)
